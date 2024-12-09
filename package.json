@@ -9,9 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.18",
     "react": "19.0.0-rc-66855b96-20241106",
+    "react-device-detect": "^2.2.3",
     "react-dom": "19.0.0-rc-66855b96-20241106",
-    "next": "15.0.3"
+    "next": "15.0.3",
+    "survey-core": "^1.12.12",
+    "survey-react-ui": "^1.12.12"
   },
   "devDependencies": {
     "typescript": "^5",
