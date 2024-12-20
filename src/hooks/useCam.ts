@@ -1,5 +1,6 @@
-import { RefObject, useEffect, useMemo, useRef, useState } from 'react';
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ProctorService from './ProctorService';
+import UserMediaService from './UserMediaService';
 
 /**
  * useCam is a hook that allows you to detect faces and objects in a video stream.
@@ -19,20 +20,25 @@ import ProctorService from './ProctorService';
  *
  * @returns {{ videoRef: RefObject<HTMLVideoElement>, violationStatus: { facesDetected: number, objectDetected: string[] }, startWebcam: () => void }}
  */
-export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => {
-  // const [camStream, setCamStream] = useState<MediaStream | null>(null);
+export const useCam = ({ }: { disabled?: boolean; hasExamStarted: boolean; }) => {
+  const userMediaRef = useRef<typeof UserMediaService>(UserMediaService);
   const camStream = useRef<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const proctorRef = useRef<typeof ProctorService>(ProctorService);
+  const proctorRef = useRef<typeof ProctorService>(ProctorService);;
 
   const [violationStatus, setViolationStatus] = useState<{
     facesDetected: number;
     objectDetected: string[];
+    violationOverallCount: number;
+    violationWarning: boolean;
   }>({
     facesDetected: 0,
     objectDetected: [],
+    violationOverallCount: 0,
+    violationWarning: false
   });
 
+  const userMedia = useMemo(() => userMediaRef.current(), []);
   const proctor = useMemo(() => proctorRef.current(), []);
 
   useEffect(() => {
@@ -40,6 +46,11 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
 
     // if (!disabled && hasWebcamInit) {
     //   startWebcam();
+    // }
+
+    // if (hasExamStarted && videoRef.current) {
+    //   detectFaces(videoRef);
+    //   objectDetection(videoRef);
     // }
 
     return () => {
@@ -57,15 +68,18 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
    * @param videoRef a reference to the video element that the hook is controlling.
    * @returns an array of face detections, or undefined if the video stream is not ready.
    */
-  const detectFaces = (videoRef: RefObject<HTMLVideoElement>) => {
+  const detectFaces = useCallback((videoRef: RefObject<HTMLVideoElement>) => {
     if (videoRef.current && videoRef.current.readyState >= 2 && proctor.faceDetector) {
       const detections = proctor.faceDetector.detectForVideo(videoRef.current, performance.now());
       setViolationStatus((prev) => ({ ...prev, facesDetected: detections.detections.length }));
-      requestAnimationFrame(detectFaces.bind(this, videoRef));
-      return detections.detections;
+      // requestAnimationFrame(detectFaces.bind(this, videoRef));
+      requestAnimationFrame(() => detectFaces(videoRef));
+      // return detections.detections;
+    } else {
+      // window.requestAnimationFrame(detectFaces.bind(this, videoRef));
+      requestAnimationFrame(() => detectFaces(videoRef));
     }
-    window.requestAnimationFrame(detectFaces.bind(this, videoRef));
-  };
+  }, [videoRef.current]);
 
   /**
    * Tracks eye movements in a video stream using face landmarks.
@@ -92,7 +106,7 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
    * @param videoRef A reference to the video element being used for object detection.
    * @returns an array of object detections, or undefined if the video stream is not ready.
    */
-  const objectDetection = (videoRef: RefObject<HTMLVideoElement>) => {
+  const objectDetection = useCallback((videoRef: RefObject<HTMLVideoElement>) => {
     if (videoRef.current && videoRef.current.readyState >= 2 && proctor.objectDetector) {
       const detections = proctor.objectDetector.detectForVideo(videoRef.current, performance.now());
       //   setViolationStatus((prev) => ({ ...prev, objectDetected: detections.detections.length }))
@@ -102,11 +116,15 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
         );
         return { ...prev, objectDetected: categories };
       });
-      requestAnimationFrame(objectDetection.bind(this, videoRef));
-      return detections.detections;
+      // requestAnimationFrame(objectDetection.bind(this, videoRef));
+      requestAnimationFrame(() => objectDetection(videoRef));
+      // return detections.detections;
+    } else {
+      // console.log("detcccting object here", enableDetection);
+      // requestAnimationFrame(objectDetection.bind(this, videoRef));
+      requestAnimationFrame(() => objectDetection(videoRef));
     }
-    requestAnimationFrame(objectDetection.bind(this, videoRef));
-  };
+  }, [videoRef.current]);
 
   /**
    * Requests access to the user's webcam and starts the face detection, eye tracking and object detection.
@@ -126,9 +144,22 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
         videoRef.current.srcObject = camStream.current;
       }
       if (videoRef.current) {
-        detectFaces(videoRef);
-        //   eyesTracker(videoRef)
-        objectDetection(videoRef);
+        // detectFaces(videoRef);
+        // eyesTracker(videoRef)
+        // objectDetection(videoRef);
+      }
+    } catch (error) {
+      console.error('Error accessing webcam:', error);
+    }
+  }
+
+  function testWebcam() {
+    try {
+      console.log(videoRef.current);
+      if (videoRef.current) {
+        console.log(userMedia.stream);
+        // videoRef.current.srcObject = camStream.current;
+        videoRef.current.srcObject = userMedia.stream ? userMedia.stream : null;
       }
     } catch (error) {
       console.error('Error accessing webcam:', error);
@@ -140,13 +171,19 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
     try {
       // console.log("ref of video", videoRef);
       // Get user media but don't start the video yet
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
+      // const mediaStream = await navigator.mediaDevices.getUserMedia({
+      //   video: {
+      //     frameRate: { ideal: 10, max: 15 },
+      //     // width: { ideal: 720 },
+      //     // height: { ideal: 480 },
+      //     // aspectRatio: 16 / 9
+      //   },
+      //   audio: true,
+      // });
 
       // setCamStream(mediaStream);
-      camStream.current = mediaStream;
+      // camStream.current = mediaStream;
+      camStream.current = userMedia.stream ? userMedia.stream : null;
     } catch (error) {
       console.error(error);
     }
@@ -171,6 +208,7 @@ export const useCam = ({ }: { disabled?: boolean; hasWebcamInit: boolean; }) => 
   return {
     requestAVPermission,
     startWebcam,
+    testWebcam,
     violationStatus,
     videoRef,
     faces: violationStatus.facesDetected,

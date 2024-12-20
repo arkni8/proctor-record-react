@@ -40,6 +40,8 @@ export type ProctorObject = {
     violationStatus: {
       facesDetected: number;
       objectDetected: string[];
+      violationOverallCount: number;
+      violationWarning: boolean;
     };
     videoRef: RefObject<HTMLVideoElement>;
     faces: number;
@@ -48,6 +50,7 @@ export type ProctorObject = {
     requestAVPermission: () => Promise<void>;
     pauseLiveView: () => void;
     resumeLiveView: () => void;
+    testWebcam: () => void;
   };
 };
 
@@ -121,12 +124,12 @@ export function useProctoring({
     disabled: forceFullScreen === false,
   });
 
-  const { videoRef, violationStatus, faces, objects, startWebcam, requestAVPermission, pauseLiveView, resumeLiveView } = useCam({ disabled: monitorCam === false, hasWebcamInit: hasExamStarted });
+  const { videoRef, violationStatus, faces, objects, startWebcam, requestAVPermission, pauseLiveView, resumeLiveView, testWebcam } = useCam({ disabled: monitorCam === false, hasExamStarted });
 
   // console.log(videoRef, 'for videoref from proctoring');
   return {
     fullScreen: { status: fullScreenStatus, trigger: triggerFullscreen },
     tabFocus: { status: tabFocusStatus },
-    camDetection: { violationStatus, videoRef, faces, objects, startWebcam, requestAVPermission, pauseLiveView, resumeLiveView },
+    camDetection: { violationStatus, videoRef, faces, objects, startWebcam, requestAVPermission, pauseLiveView, resumeLiveView, testWebcam },
   };
 }

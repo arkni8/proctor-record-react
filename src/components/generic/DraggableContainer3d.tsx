@@ -16,6 +16,7 @@ export function DraggableContainer3d({ gridSize = 20, children }: Props) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const originalPositionRef = useRef({ x: originalPosition.x, y: originalPosition.y });
   const lastTransformRef = useRef({ x: 0, y: 0 });
+  const [contract, setContract] = useState(false);
 
   const snapToGrid = (value: number) => Math.round(value / gridSize) * gridSize;
 
@@ -124,10 +125,14 @@ export function DraggableContainer3d({ gridSize = 20, children }: Props) {
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="absolute z-30 rounded-t-lg text-xs p-2">
-        Webcam Preview
+      <div className="absolute z-30 rounded-t-lg p-2 w-52">
+        <span className='text-xs whitespace-nowrap'>Webcam Preview</span>
+        <button
+          className='ml-2 text-xs border rounded-md p-1 leading-none'
+          onClick={() => setContract(prev => !prev)}
+        >{contract ? "+" : "X"}</button>
       </div>
-      <div className='relative rounded-xl overflow-clip'>
+      <div className={"relative rounded-xl overflow-clip" + (contract ? " hidden" : "")}>
         {children}
       </div>
     </div>

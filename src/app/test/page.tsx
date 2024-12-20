@@ -1,15 +1,32 @@
 "use client";
 import Alerts from './components/Alerts';
 import { useProctoring } from '../../hooks/useProctoring';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ExamIntro from './components/Exam/ExamIntro';
 import ExamPaused from './components/Exam/ExamPaused';
 import Exam from './components/Exam';
-import DraggableContainer from '@/components/generic/DraggableContainer';
+// import DraggableContainer from '@/components/generic/DraggableContainer';
 import DraggableContainer3d from '@/components/generic/DraggableContainer3d';
+import UserMediaService from '@/hooks/UserMediaService';
+
+// plan a timeout everytime the face is not clearly visible on camera;
 
 function Test() {
     const [examHasStarted, setExamHasStarted] = useState(false);
+    const userMediaRef = useRef<typeof UserMediaService>(UserMediaService);
+    const userMedia = useMemo(() => userMediaRef.current(), []);
+
+    // const [recordOverlap, setRecordOverlap] = useState(false);
+    const recordOverlap = useRef(false);
+
+    const mediaRef = useRef<MediaRecorder | undefined>();
+    // const [recordTrack, setRecordedChunks] = useState<Blob[]>([]);
+    const recordTrack = useRef<Blob[]>([]);
+    const mediaRef2 = useRef<MediaRecorder | undefined>();
+    // const [recordTrack2, setRecordedChunks2] = useState<Blob[]>([]);
+    const recordTrack2 = useRef<Blob[]>([]);
+    // const videoRef2 = useRef<HTMLVideoElement | null>(null);
+    // const stream = useRef<MediaStream>();
 
     const { fullScreen, tabFocus, camDetection } = useProctoring({
         forceFullScreen: true,
@@ -23,8 +40,10 @@ function Test() {
 
     useEffect(() => {
         if (camDetection.videoRef) {
-            camDetection.requestAVPermission().then(() => {
-                requestAnimationFrame(() => camDetection.startWebcam());
+            userMedia.init().then(() => {
+                camDetection.requestAVPermission().then(() => {
+                    requestAnimationFrame(() => camDetection.testWebcam());
+                });
             });
         }
         // if (examHasStarted) {
@@ -32,17 +51,108 @@ function Test() {
 
         //     }, 1000);
         // }
+        return () => {
+            if (userMedia.stream) {
+                userMedia.stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
+
+    async function triggerCamera() {
+        mediaRef.current = new MediaRecorder(userMedia.stream!.clone(), {
+            mimeType: 'video/webm;codecs=vp8,opus'
+        });
+        // console.log(mediaRef.current);
+
+        mediaRef.current.ondataavailable = (e) => {
+            console.log("1 -");
+            if (e.data.size > 0) {
+                // setRecordedChunks((prev) => {
+                //     prev.push(e.data);
+                //     return prev;
+                // });
+                recordTrack.current.push(e.data);
+                // console.log(recordOverlap);
+            }
+        };
+
+        mediaRef.current.start(1000);
+    }
+
+    const handleStopRecording = useCallback(() => {
+        if (mediaRef.current) {
+            mediaRef.current.stop();
+            console.log(recordTrack.current);
+            requestAnimationFrame(() => {
+                const blob = new Blob(recordTrack.current, { type: "video/webm" });
+                const videoURL = URL.createObjectURL(blob);
+                // videoRef2.current!.src = videoURL;
+                const link = document.createElement('a');
+                link.href = videoURL;
+                link.download = 'stream-video.webm';
+                link.click();
+                recordTrack.current = [];
+                mediaRef.current = undefined;
+            });
+            // setRecording(false);
+        }
+
+        // debug
+        // if (userMedia.stream) {
+        //     userMedia.stream.getTracks().forEach(track => track.stop());
+        // }
+    }, []);
+
+    const triggerCamera2 = useCallback(async () => {
+        recordOverlap.current = true;
+        mediaRef2.current = new MediaRecorder(userMedia.stream!.clone(), {
+            mimeType: 'video/webm;codecs=vp8,opus'
+        });
+        // console.log(mediaRef.current);
+
+        mediaRef2.current.ondataavailable = (e) => {
+            console.log("2 - ");
+            if (e.data.size > 0) {
+                recordTrack2.current.push(e.data);
+            }
+        };
+
+        mediaRef2.current.start(1000);
+    }, []);
+
+    const handleStopRecording2 = useCallback(() => {
+        recordOverlap.current = false;
+        mediaRef2.current?.stop();
+        console.log(recordTrack2.current);
+        requestAnimationFrame(() => {
+            const blob = new Blob(recordTrack2.current, { type: "video/webm" });
+            const videoURL = URL.createObjectURL(blob);
+            // videoRef2.current!.src = videoURL;
+            const link = document.createElement('a');
+            link.href = videoURL;
+            link.download = 'stream2-video.webm';
+            link.click();
+            recordTrack2.current = [];
+            mediaRef2.current = undefined;
+        });
     }, []);
 
     if (!examHasStarted) {
         return (
             <>
+                <div className='text-center'>
+                    <button className='mr-3' onClick={() => triggerCamera()}>Here&apos;s a start 1 button</button>
+                    <button onClick={() => handleStopRecording()}>Here&apos;s a stop button</button>
+                    <br />
+                    <button className='mr-3' onClick={() => triggerCamera2()}>Here&apos;s a start 2 button</button>
+                    <button onClick={() => handleStopRecording2()}>Here&apos;s a stop button</button>
+                </div>
+                {/* <video ref={videoRef2} controls /> */}
                 <ExamIntro
                     onClick={() => {
                         fullScreen.trigger();
                         setExamHasStarted(true);
 
-                        // Wait before react finishes updating state. flushSync doesn't seem to work
                         setTimeout(() => {
                             // setExamHasStarted(true);
                             camDetection.startWebcam();

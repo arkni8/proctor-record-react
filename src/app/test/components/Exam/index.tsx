@@ -8,10 +8,22 @@ type Props = {
     facesDetected: number;
     objectDetected: string[];
   };
+  // violationDuration: number;
+  // violationWarning: boolean;
 };
 
 const Exam = ({ violationStatus }: Props) => {
 
+  // console.log(violationStatus);
+
+  // if (violationWarning) {
+  //   return <div>
+  //     <p>WARNING WARNING WARNING!!!</p>
+  //     <p>Your face is not clearly visible on the camera, please remove any obstacle and show your face clearly at the camera.</p>
+  //     <p>Make sure there is no one around you. You may get disqualified if you don&apos;t follow the rules properly.</p>
+  //     <p>You have {violationDuration} seconds before you are disqualified.</p>
+  //   </div>;
+  // }
 
 
   return (
