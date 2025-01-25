@@ -5,7 +5,7 @@ import {
   // triggerFullscreen,
   useFullScreenDetection,
 } from './useFullScreenDetection';
-import { useTabFocusDetection } from './useTabFocusDetection';
+import { useTabFocusDetection } from './useTabFocusDetectionCopy';
 import { useCopyDisable } from './useCopyDisable';
 import { useDisableContextMenu } from './useDisableContextMenu';
 import { useSelectionDisable } from './useSelectionDisable';
@@ -118,13 +118,14 @@ export function useProctoring({
     disabled: preventTabSwitch === false,
   });
 
-  // console.log(tabFocusStatus, 'for tabfocus from proctoring');
+  console.log(tabFocusStatus, 'for tabfocus from proctoring');
 
   const { fullScreenStatus, triggerFullscreen } = useFullScreenDetection({
     disabled: forceFullScreen === false,
   });
 
   const { videoRef, violationStatus, faces, objects, startWebcam, requestAVPermission, pauseLiveView, resumeLiveView, testWebcam } = useCam({ disabled: monitorCam === false, hasExamStarted });
+
 
   // console.log(videoRef, 'for videoref from proctoring');
   return {

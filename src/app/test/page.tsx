@@ -20,13 +20,9 @@ function Test() {
     const recordOverlap = useRef(false);
 
     const mediaRef = useRef<MediaRecorder | undefined>();
-    // const [recordTrack, setRecordedChunks] = useState<Blob[]>([]);
     const recordTrack = useRef<Blob[]>([]);
     const mediaRef2 = useRef<MediaRecorder | undefined>();
-    // const [recordTrack2, setRecordedChunks2] = useState<Blob[]>([]);
     const recordTrack2 = useRef<Blob[]>([]);
-    // const videoRef2 = useRef<HTMLVideoElement | null>(null);
-    // const stream = useRef<MediaStream>();
 
     const { fullScreen, tabFocus, camDetection } = useProctoring({
         forceFullScreen: true,
@@ -59,6 +55,8 @@ function Test() {
     }, []);
 
     async function triggerCamera() {
+        recordTrack.current = [];
+
         mediaRef.current = new MediaRecorder(userMedia.stream!.clone(), {
             mimeType: 'video/webm;codecs=vp8,opus'
         });
@@ -104,6 +102,8 @@ function Test() {
     }, []);
 
     const triggerCamera2 = useCallback(async () => {
+        recordTrack2.current = [];
+
         recordOverlap.current = true;
         mediaRef2.current = new MediaRecorder(userMedia.stream!.clone(), {
             mimeType: 'video/webm;codecs=vp8,opus'
@@ -141,10 +141,10 @@ function Test() {
         return (
             <>
                 <div className='text-center'>
-                    <button className='mr-3' onClick={() => triggerCamera()}>Here&apos;s a start 1 button</button>
+                    <button className='mr-3' onClick={() => triggerCamera()}>Here&apos;s a record 1 button</button>
                     <button onClick={() => handleStopRecording()}>Here&apos;s a stop button</button>
                     <br />
-                    <button className='mr-3' onClick={() => triggerCamera2()}>Here&apos;s a start 2 button</button>
+                    <button className='mr-3' onClick={() => triggerCamera2()}>Here&apos;s a record 2 button</button>
                     <button onClick={() => handleStopRecording2()}>Here&apos;s a stop button</button>
                 </div>
                 {/* <video ref={videoRef2} controls /> */}
